@@ -1,0 +1,12 @@
+v2.
+{<<"_build/test/lib/triangles/ebin/Elixir.Triangles.beam">>,
+ 'Elixir.Triangles',module,<<"lib/triangles.ex">>,
+ ['Elixir.Module','Elixir.Kernel'],
+ [erlang,'Elixir.Enum'],
+ [],nil}.
+{<<"_build/test/lib/triangles/ebin/Elixir.App.beam">>,'Elixir.App',module,
+ <<"lib/app.ex">>,
+ ['Elixir.Module','Elixir.Kernel'],
+ ['Elixir.File',erlang,'Elixir.Triangles','Elixir.String','Elixir.Enum',
+  'Elixir.Path'],
+ [],nil}.

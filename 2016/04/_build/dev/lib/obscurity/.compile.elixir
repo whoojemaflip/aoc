@@ -1,0 +1,7 @@
+v2.
+{<<"_build/dev/lib/obscurity/ebin/Elixir.Obscurity.beam">>,'Elixir.Obscurity',
+ module,<<"lib/obscurity.ex">>,
+ ['Elixir.Kernel','Elixir.Module'],
+ ['Elixir.List.Chars','Elixir.File','Elixir.Path',erlang,'Elixir.IO',
+  'Elixir.String','Elixir.String.Chars','Elixir.Enum'],
+ [],nil}.
