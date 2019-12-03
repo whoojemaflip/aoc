@@ -65,26 +65,33 @@ func (p Point) move(direction byte) Point {
 	}
 }
 
-func traceFirstWire(wire []WireVector) map[Point]bool {
+func traceFirstWire(wire []WireVector) map[Point]Point {
 	p := Point{0, 0}
-	out := make(map[Point]bool)
+	out := make(map[Point]Point)
+	distance := 0
 	for _, vector := range wire {
 		for i := 0; i < vector.distance; i++ {
+			distance += 1
 			p = p.move(vector.direction)
-			out[p] = true
+			_, ok := out[p]
+			if !ok {
+				out[p] = Point{distance, -1}
+			}
 		}
 	}
 	return out
 }
 
-func traceSecondWire(wire []WireVector, other_wire map[Point]bool) (out []Point) {
+func traceSecondWire(wire []WireVector, other_wire map[Point]Point) (out []Point) {
 	p := Point{0, 0}
+	distance := 0
 	for _, vector := range wire {
 		for i := 0; i < vector.distance; i++ {
+			distance += 1
 			p = p.move(vector.direction)
-			ok := other_wire[p]
+			elem, ok := other_wire[p]
 			if ok {
-				out = append(out, p)
+				out = append(out, Point{elem.x, distance})
 			}
 		}
 	}
