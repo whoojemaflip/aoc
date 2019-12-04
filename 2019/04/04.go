@@ -37,11 +37,21 @@ func testIncreasing(i int) bool {
 
 func testAdjacent(i int) bool {
 	last_char := '-'
+	repeat_count := 1
+
 	for _, char := range strconv.Itoa(i) {
 		if char == last_char {
+			repeat_count += 1
+		} else if repeat_count == 2 {
 			return true
+		} else {
+			repeat_count = 1
 		}
 		last_char = char
 	}
-	return false
+	if repeat_count == 2 {
+		return true
+	} else {
+		return false
+	}
 }
