@@ -69,15 +69,23 @@ func (e Halt) Error() string {
 }
 
 type Arg struct {
-	value    int
-	indirect bool
+	value int
+	mode  int
 }
 
 func (arg Arg) resolved_value(memory Memory) int {
-	if arg.indirect {
+	if arg.mode == 0 {
 		return memory.peek(arg.value)
 	} else {
 		return arg.value
+	}
+}
+
+func (arg Arg) String() string {
+	if arg.mode == 0 {
+		return fmt.Sprintf("peek(%v)", arg.value)
+	} else {
+		return fmt.Sprintf("literal(%v)", arg.value)
 	}
 }
 
@@ -88,7 +96,8 @@ var instructions = map[int]Opcode{
 		func(args []Arg, memory Memory) (e error) {
 			a := args[0].resolved_value(memory)
 			b := args[1].resolved_value(memory)
-			memory.poke(args[2].value, a+b)
+			store := args[2].value
+			memory.poke(store, a+b)
 			return
 		},
 	},
@@ -98,7 +107,8 @@ var instructions = map[int]Opcode{
 		func(args []Arg, memory Memory) (e error) {
 			a := args[0].resolved_value(memory)
 			b := args[1].resolved_value(memory)
-			memory.poke(args[2].value, a*b)
+			store := args[2].value
+			memory.poke(store, a*b)
 			return
 		},
 	},
@@ -112,7 +122,8 @@ var instructions = map[int]Opcode{
 			text = strings.TrimSuffix(text, "\n")
 			num, err := strconv.Atoi(text)
 			check(err)
-			memory.poke(args[0].value, num)
+			store := args[0].value
+			memory.poke(store, num)
 			return
 		},
 	},
@@ -122,6 +133,56 @@ var instructions = map[int]Opcode{
 		func(args []Arg, memory Memory) (e error) {
 			out := args[0].resolved_value(memory)
 			fmt.Println(out)
+			return
+		},
+	},
+	5: {
+		"jump-if-true",
+		2,
+		func(args []Arg, memory Memory) (e error) {
+			if args[0].resolved_value(memory) != 0 {
+				pc = args[1].resolved_value(memory)
+			}
+			return
+		},
+	},
+	6: {
+		"jump-if-false",
+		2,
+		func(args []Arg, memory Memory) (e error) {
+			if args[0].resolved_value(memory) == 0 {
+				pc = args[1].resolved_value(memory)
+			}
+			return
+		},
+	},
+	7: {
+		"less than",
+		3,
+		func(args []Arg, memory Memory) (e error) {
+			a := args[0].resolved_value(memory)
+			b := args[1].resolved_value(memory)
+			store := args[2].value
+			if a < b {
+				memory.poke(store, 1)
+			} else {
+				memory.poke(store, 0)
+			}
+			return
+		},
+	},
+	8: {
+		"equals",
+		3,
+		func(args []Arg, memory Memory) (e error) {
+			a := args[0].resolved_value(memory)
+			b := args[1].resolved_value(memory)
+			store := args[2].value
+			if a == b {
+				memory.poke(store, 1)
+			} else {
+				memory.poke(store, 0)
+			}
 			return
 		},
 	},
@@ -154,26 +215,36 @@ func decode_instruction(instruction int) (opcode int, parameter_modes []int) {
 
 func prepare_args(arity int, parameter_modes []int, memory Memory, pc int) (args []Arg) {
 	for i := 0; i < arity; i++ {
-		indirect := (i >= len(parameter_modes) || parameter_modes[i] == 0)
+		var mode int
+		if i >= len(parameter_modes) || parameter_modes[i] == 0 {
+			mode = 0
+		} else {
+			mode = 1
+		}
 		value := memory.peek(pc + i)
-		args = append(args, Arg{value, indirect})
+		args = append(args, Arg{value, mode})
 	}
 	return
 }
 
-func process(memory Memory) {
-	var pc int
+var pc int
 
+func process(memory Memory) {
 	for {
+		//	fmt.Println(pc, memory)
 		instruction := memory.peek(pc)
 		code, parameter_modes := decode_instruction(instruction)
-		pc += 1
 
-		opcode := instructions[code]
+		opcode, ok := instructions[code]
+		if !ok {
+			panic(fmt.Sprintf("Opcode not found at %v", pc))
+		}
+
+		pc += 1
 		args := prepare_args(opcode.arity, parameter_modes, memory, pc)
 		pc += opcode.arity
 
-		fmt.Printf("%v %v\n", opcode.name, args)
+		//	fmt.Printf("%v %v\n", opcode.name, args)
 
 		error := opcode.calc(args, memory)
 
@@ -186,9 +257,5 @@ func process(memory Memory) {
 func main() {
 	filename := os.Args[1]
 	memory := loadFile(filename)
-	fmt.Println(memory)
-
 	process(memory)
-
-	fmt.Println(memory)
 }
