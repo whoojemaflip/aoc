@@ -49,10 +49,43 @@ func recurseEdgeCount(key string, count int, orbits map[string]string) int {
 	}
 }
 
+func pathToCOM(key string, route []string, orbits map[string]string) []string {
+	route = append(route, key)
+
+	next_key, ok := orbits[key]
+	if !ok {
+		return route
+	}
+	return pathToCOM(next_key, route, orbits)
+}
+
+func arrayIndex(key string, array []string) (index int) {
+	for i, v := range array {
+		if key == v {
+			return i
+		}
+	}
+	return -1
+}
+
+func hackyShortestPath(key string, routes_you []string, routes_san []string) (distance int) {
+	for i, o := range routes_you {
+		f := arrayIndex(o, routes_san)
+		if f != -1 {
+			return i + f - 2
+		}
+	}
+	return -1
+}
+
 func main() {
 	filename := os.Args[1]
 	orbits := loadFile(filename)
 
-	result := countGraphEdges(orbits)
-	fmt.Println(result)
+	routes_san := pathToCOM("SAN", make([]string, 0), orbits)
+	routes_you := pathToCOM("YOU", make([]string, 0), orbits)
+	// fmt.Println(routes_you, routes_san)
+	res := hackyShortestPath("YOU", routes_you, routes_san)
+
+	fmt.Println(res)
 }
