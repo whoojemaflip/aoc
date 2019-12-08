@@ -60,29 +60,27 @@ func prepare_args(arity int, parameter_modes []int, memory Memory, pc int) (args
 
 var pc int
 
-func process(memory Memory) {
-	pc = 0
-
+func process(memory Memory, pc *int) error {
 	for {
-		//fmt.Println(pc, memory)
-		instruction := memory.peek(pc)
+		//		fmt.Println(*pc, memory)
+		instruction := memory.peek(*pc)
 		code, parameter_modes := decode_instruction(instruction)
 
 		opcode, ok := Instructions[code]
 		if !ok {
-			panic(fmt.Sprintf("Opcode not found at %v", pc))
+			panic(fmt.Sprintf("Opcode not found at %v", *pc))
 		}
 
-		pc += 1
-		args := prepare_args(opcode.arity, parameter_modes, memory, pc)
-		pc += opcode.arity
+		*pc += 1
+		args := prepare_args(opcode.arity, parameter_modes, memory, *pc)
+		*pc += opcode.arity
 
-		//	fmt.Printf("%v %v\n", opcode.name, args)
+		//		fmt.Printf("%v %v\n", opcode.name, args)
 
-		error := opcode.calc(args, memory)
+		e := opcode.calc(args, memory, pc)
 
-		if error != nil {
-			return
+		if e != nil {
+			return e
 		}
 	}
 }
@@ -104,32 +102,66 @@ func main() {
 	filename := os.Args[1]
 	memory := loadFile(filename)
 	fmt.Println(memory)
-	scratch_mem := make([]int, len(memory))
 
 	max_juice := 0
 	var best_phase_sequence []int
 
 	var phase_seq = PhaseSequence{
-		0, 1, 2, 3, 4,
+		5, 6, 7, 8, 9,
 	}
 	phase_sequence_iterator := NewPhaseSequenceIterator(phase_seq)
 
 	for phase_sequence_iterator.Next() {
 		sequence := phase_sequence_iterator.Value()
-		fmt.Printf("Sequence: %v", sequence)
-		output_buffer = 0
+		fmt.Printf("Sequence: %v\n", sequence)
 
-		for _, n := range sequence {
-			copy(scratch_mem, memory)
-			input_buffer = []int{n, output_buffer}
-			process(scratch_mem)
+		pc := make([]int, 5)
+		machines := [5]Memory{}
+		for i, _ := range machines {
+			machines[i] = make([]int, len(memory))
+			copy(machines[i], memory)
 		}
 
-		fmt.Printf(" completed with %v\n", output_buffer)
+		output_buffer = 0
+		for i, n := range sequence {
+			input_buffer = []int{n, output_buffer}
+			//		fmt.Printf("\nStarting mahine %v with %v\n", i, input_buffer)
+			process(machines[i], &pc[i])
+		}
 
-		if output_buffer > max_juice {
-			max_juice = output_buffer
-			best_phase_sequence = sequence
+		var i int
+	LOOP:
+		for {
+			input_buffer = []int{output_buffer}
+			//		fmt.Printf("\nStarting machine %v with %v\n", i, input_buffer)
+			e := process(machines[i], &pc[i])
+
+			if e != nil {
+				switch e.(type) {
+				case Halt:
+					fmt.Printf("Machine %v completed with %v\n", i, output_buffer)
+
+					if i == 4 {
+						if output_buffer > max_juice {
+							max_juice = output_buffer
+							best_phase_sequence = sequence
+						}
+
+						fmt.Println("END")
+						break LOOP
+					} else {
+						i += 1
+						continue
+					}
+				case Yield:
+					if i == 4 {
+						i = 0
+					} else {
+						i += 1
+					}
+					continue
+				}
+			}
 		}
 	}
 
