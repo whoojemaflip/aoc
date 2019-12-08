@@ -29,23 +29,26 @@ func loadFile(filename string) []int {
 func main() {
 	filename := os.Args[1]
 	pixels := loadFile(filename)
+	layers := len(pixels) / 150
 
-	layers := make([][]int, len(pixels)/150)
+	image := make([]int, 150)
 
-	lowest := 999999
-	l_ind := 0
-	for i, _ := range layers {
-		layers[i] = []int{0, 0, 0}
+	for i := range image {
+		image[i] = 2
+	}
+
+	for i := 0; i < layers; i += 1 {
 		for j := 0; j < 150; j += 1 {
 			pos := (i * 150) + j
-			this := pixels[pos]
-			layers[i][this] += 1
-		}
-		if layers[i][0] < lowest {
-			l_ind = i
-			lowest = layers[i][0]
+
+			if image[j] == 2 {
+				image[j] = pixels[pos]
+			}
 		}
 	}
 
-	fmt.Println(layers[l_ind])
+	for i := 0; i < 6; i += 1 {
+		row := 25 * i
+		fmt.Printf("%v\n", image[row:row+25])
+	}
 }
