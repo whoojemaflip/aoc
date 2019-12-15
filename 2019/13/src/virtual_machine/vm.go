@@ -8,6 +8,7 @@ type VM struct {
 	output_buffer []int64
 	memory        Memory
 	registers     map[int]int64
+	instructions  map[int]Opcode
 	debug         bool
 }
 
@@ -18,6 +19,7 @@ func NewVM(filename string) VM {
 		make([]int64, 0),
 		NewMemory(filename),
 		make(map[int]int64),
+		Instructions,
 		false,
 	}
 }
@@ -29,13 +31,31 @@ func NewDebugVM(filename string) VM {
 		make([]int64, 0),
 		NewMemory(filename),
 		make(map[int]int64),
+		Instructions,
 		true,
+	}
+}
+
+func NewInteractiveVM(filename string) VM {
+	return VM{
+		0,
+		make([]int64, 10),
+		make([]int64, 0),
+		NewMemory(filename),
+		make(map[int]int64),
+		InteractiveInstructions(),
+		false,
 	}
 }
 
 func (vm VM) String() string {
 	//fmt.Printf("pc: %v, regs: %v\nmem: %v\n", vm.pc, vm.registers, vm.memory)
 	return fmt.Sprintf("pc: %v, regs: %v\n", vm.pc, vm.registers)
+}
+
+// exported alias for memory.poke
+func (vm *VM) SetMem(addr, value int) {
+	vm.memory.poke(uint64(addr), int64(value))
 }
 
 func (vm *VM) Process() error {
@@ -46,7 +66,7 @@ func (vm *VM) Process() error {
 
 		instruction := vm.memory.peek(vm.pc)
 		code, parameter_modes := decode_instruction(instruction)
-		opcode, ok := Instructions[code]
+		opcode, ok := vm.instructions[code]
 		if !ok {
 			panic(fmt.Sprintf("Opcode not found at %v", vm.pc))
 		}

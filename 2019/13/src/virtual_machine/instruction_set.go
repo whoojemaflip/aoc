@@ -1,5 +1,13 @@
 package virtual_machine
 
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"strconv"
+	"strings"
+)
+
 type Opcode struct {
 	name  string
 	arity int
@@ -7,6 +15,30 @@ type Opcode struct {
 }
 
 type OpcodeFunction func(args []Arg, vm *VM) error
+
+var InteractiveInput = Opcode{
+	"input",
+	1,
+	func(args []Arg, vm *VM) (e error) {
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Print("Enter number: ")
+		text, _ := reader.ReadString('\n')
+		text = strings.TrimSuffix(text, "\n")
+		num, err := strconv.Atoi(text)
+		if err != nil {
+			panic("bad input eh!")
+		}
+		store := args[0].addr
+		vm.memory.poke(store, int64(num))
+		return
+	},
+}
+
+func InteractiveInstructions() map[int]Opcode {
+	ins := Instructions
+	ins[3] = InteractiveInput
+	return ins
+}
 
 var Instructions = map[int]Opcode{
 	1: {
