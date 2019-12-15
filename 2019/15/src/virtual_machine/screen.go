@@ -18,6 +18,10 @@ func (screen *Screen) Update(x, y int, tile int) {
 	(*screen)[y] = line
 }
 
+func (screen Screen) Get(x, y int) int {
+	return screen[y][x]
+}
+
 func (screen Screen) Print(tiles map[int]string) {
 	fmt.Printf("\n    ")
 	for x := 0; x < len(screen[0]); x += 1 {
